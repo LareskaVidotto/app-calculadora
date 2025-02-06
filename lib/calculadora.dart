@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:expressions/expressions.dart';
 import 'package:flutter/material.dart';
 
@@ -9,7 +10,6 @@ class Calculadora extends StatefulWidget {
 }
 
 class _CalculadoraState extends State<Calculadora> {
-  final String limpar = 'Limpar';
   String expressao = '';
   String resultado = '';
 
@@ -28,28 +28,44 @@ class _CalculadoraState extends State<Calculadora> {
 
   void calcularResultado() {
     try {
-      resultado = avaliarexpressao(expressao).toString();
+      resultado = avaliarExpressao(expressao).toString();
     } catch (e) {
-      resultado = 'Não é possível calcular';
+      resultado = 'Erro';
     }
   }
 
-  double avaliarexpressao(String expressao) {
-    // Substituir 'x' por '*' para multiplicação
-    expressao = expressao.replaceAll('x', '*');
-    // Substituir '÷' por '/' para divisão
-    expressao = expressao.replaceAll('÷', '/');
-    // Avaliar a expressão com a biblioteca expressions
-    ExpressionEvaluator avaliador = const ExpressionEvaluator();
-    double resultado = avaliador.eval(Expression.parse(expressao), {});
-    return resultado;
+  double avaliarExpressao(String expressao) {
+    expressao = expressao.replaceAll('x', '*').replaceAll('÷', '/');
+    
+    Expression exp = Expression.parse(expressao);
+    final evaluator = const ExpressionEvaluator();
+
+    return evaluator.eval(exp, {
+      'sin': (num x) => sin(x),
+      'cos': (num x) => cos(x),
+      'tan': (num x) => tan(x),
+      'log': (num x) => log(x) / log(10),
+      'ln': (num x) => log(x),
+      'fact': (num x) => factorial(x.toInt()),
+      'pow': (num x, num y) => pow(x, y),
+    }) as double;
   }
 
-  Widget botao(String valor) {
+  int factorial(int n) {
+    if (n < 0) return 0;
+    return n == 0 ? 1 : n * factorial(n - 1);
+  }
+
+  Widget botao(String valor, {Color? cor}) {
     return TextButton(
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white,
+        backgroundColor: cor ?? Colors.blueGrey,
+        padding: const EdgeInsets.all(16),
+      ),
       child: Text(
         valor,
-        style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
       ),
       onPressed: () => _pressionarBotao(valor),
     );
@@ -57,50 +73,49 @@ class _CalculadoraState extends State<Calculadora> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        Expanded(
-          child: Text(
-            expressao,
-            style: const TextStyle(fontSize: 24),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
+              alignment: Alignment.bottomRight,
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                expressao,
+                style: const TextStyle(fontSize: 32, color: Colors.white),
+              ),
+            ),
           ),
-        ),
-        Expanded(
-          child: Text(
-            resultado,
-            style: const TextStyle(fontSize: 24),
+          Expanded(
+            child: Container(
+              alignment: Alignment.bottomRight,
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                resultado,
+                style: const TextStyle(fontSize: 40, color: Colors.green),
+              ),
+            ),
           ),
-        ),
-        Expanded(
-          flex: 3,
-          child: GridView.count(
-            crossAxisCount: 4,
-            childAspectRatio: 2,
-            children: [
-              botao('7'),
-              botao('8'),
-              botao('9'),
-              botao('÷'),
-              botao('4'),
-              botao('5'),
-              botao('6'),
-              botao('x'),
-              botao('1'),
-              botao('2'),
-              botao('3'),
-              botao('-'),
-              botao('0'),
-              botao('.'),
-              botao('='),
-              botao('+'),
-              botao('('),
-              botao(')'),
-            ],
+          Expanded(
+            flex: 3,
+            child: GridView.count(
+              crossAxisCount: 4,
+              childAspectRatio: 1.5,
+              padding: const EdgeInsets.all(8),
+              children: [
+                botao('7'), botao('8'), botao('9'), botao('÷', cor: Colors.orange),
+                botao('4'), botao('5'), botao('6'), botao('x', cor: Colors.orange),
+                botao('1'), botao('2'), botao('3'), botao('-', cor: Colors.orange),
+                botao('0'), botao('.'), botao('=', cor: Colors.green), botao('+', cor: Colors.orange),
+                botao('sin('), botao('cos('), botao('tan('), botao('log(', cor: Colors.purple),
+                botao('ln('), botao('fact('), botao('^'), botao('(', cor: Colors.blueGrey),
+                botao(')'), botao('Limpar', cor: Colors.red),
+              ],
+            ),
           ),
-        ),
-        Expanded(child: botao('Limpar')),
-      ],
+        ],
+      ),
     );
   }
 }
